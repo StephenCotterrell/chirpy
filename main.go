@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"sync/atomic"
 )
 
@@ -90,14 +91,40 @@ func handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(params.Body) > 140 {
+	chirpString := params.Body
+	chirpWords := strings.Split(chirpString, " ")
+	cleanedChirpWords := []string{}
+	bannedWords := map[string]struct{}{"kerfuffle": {}, "sharbert": {}, "fornax": {}}
+	replacementString := "****"
+
+	for _, chirpWord := range chirpWords {
+		if _, banned := bannedWords[strings.ToLower(chirpWord)]; banned {
+			cleanedChirpWords = append(cleanedChirpWords, replacementString)
+		} else {
+			cleanedChirpWords = append(cleanedChirpWords, chirpWord)
+		}
+	}
+
+	cleanedChirpString := strings.Join(cleanedChirpWords, " ")
+
+	if len(cleanedChirpString) > 140 {
 		if err := respondWithError(w, 400, "chirp is too long"); err != nil {
 			log.Printf("failed to error")
 		}
 		return
 	}
 
-	respondWithJSON(w, 200, map[string]bool{"valid": true})
+	responseStruct := struct {
+		Valid       bool   `json:"valid"`
+		CleanedBody string `json:"cleaned_body"`
+	}{
+		Valid:       true,
+		CleanedBody: cleanedChirpString,
+	}
+
+	if err := respondWithJSON(w, 200, responseStruct); err != nil {
+		log.Printf("error was encountered responding: %v\n", err)
+	}
 }
 
 func respondWithError(w http.ResponseWriter, code int, msg string) error {
