@@ -97,7 +97,7 @@ func handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondWithJSON(w, 200, map[string]string{"valid": "true"})
+	respondWithJSON(w, 200, map[string]bool{"valid": true})
 }
 
 func respondWithError(w http.ResponseWriter, code int, msg string) error {
