@@ -8,7 +8,7 @@ import (
 )
 
 func handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
+	defer r.Body.Close() //nolint:errcheck - nothing actionable on Close()
 
 	type requestBody struct {
 		Body string `json:"body"`
