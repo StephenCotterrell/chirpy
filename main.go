@@ -58,6 +58,8 @@ func main() {
 	mux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.handlerChirpsRetrieve)
 	mux.HandleFunc("GET /api/chirps", apiCfg.handlerChirpsRetrieve)
 
+	mux.HandleFunc("POST /api/login", apiCfg.handleUserLogin)
+
 	srv := &http.Server{
 		Addr:    ":" + port,
 		Handler: mux,
