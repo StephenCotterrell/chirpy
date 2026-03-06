@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/StephenCotterrell/chirpy/internal/auth"
 )
@@ -11,13 +12,20 @@ import (
 func (cfg *apiConfig) handleUserLogin(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close() //nolint:errcheck // nothing actionable on Close()
 
-	type requestBody struct {
-		Password string `json:"password"`
-		Email    string `json:"email"`
+	type parameters struct {
+		Password         string `json:"password"`
+		Email            string `json:"email"`
+		ExpiresInSeconds int    `json:"expires_in_seconds"`
+	}
+
+	type response struct {
+		User
+		Token        string `json:"token"`
+		RefreshToken string `json:"refresh_token"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
-	params := requestBody{}
+	params := parameters{}
 	err := decoder.Decode(&params)
 	if err != nil {
 		log.Printf("failed to parse login request body")
@@ -32,21 +40,31 @@ func (cfg *apiConfig) handleUserLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	match, err := auth.CheckPasswordHash(params.Password, user.HashedPassword)
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "could not process password", err)
+	if err != nil || !match {
+		respondWithError(w, http.StatusUnauthorized, "Incorrect email or password", err)
 		return
 	}
 
-	if match {
-		respondWithJSON(w, http.StatusOK, User{
-			Email:     user.Email,
+	expirationTime := time.Hour
+	if params.ExpiresInSeconds > 0 && params.ExpiresInSeconds < 3600 {
+		expirationTime = time.Duration(params.ExpiresInSeconds) * time.Second
+	}
+
+	accessToken, err := auth.MakeJWT(
+		user.ID,
+		cfg.jwtSecret,
+		expirationTime,
+	)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't create access JWT", err)
+	}
+
+	respondWithJSON(w, http.StatusOK, response{
+		User: User{
+			ID:        user.ID,
 			CreatedAt: user.CreatedAt,
 			UpdatedAt: user.UpdatedAt,
-			ID:        user.ID,
-		})
-		return
-	} else {
-		respondWithError(w, http.StatusUnauthorized, "incorrect email or password", nil)
-		return
-	}
+		},
+		Token: accessToken,
+	})
 }
