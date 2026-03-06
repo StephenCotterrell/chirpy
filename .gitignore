@@ -2,3 +2,4 @@ out
 sql/schema/.env
 .env
 chirpy
+/test_login.sh
