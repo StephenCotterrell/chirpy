@@ -1,6 +1,8 @@
 package auth_test
 
 import (
+	"encoding/hex"
+	"net/http"
 	"testing"
 	"time"
 
@@ -85,4 +87,102 @@ func TestValidateJWT(t *testing.T) {
 			t.Errorf("ValidateJWT() = %v, want %v", got, userID)
 		}
 	})
+}
+
+func TestGetBearerToken(t *testing.T) {
+	tests := []struct {
+		name      string
+		headers   http.Header
+		wantToken string
+		wantErr   bool
+	}{
+		{
+			name: "Valid Bearer Token",
+			headers: http.Header{
+				"Authorization": []string{"Bearer valid_token"},
+			},
+			wantToken: "valid_token",
+			wantErr:   false,
+		},
+		{
+			name:      "Missing Authorization Header",
+			headers:   http.Header{},
+			wantToken: "",
+			wantErr:   true,
+		},
+		{
+			name: "Malformed Authorization Header",
+			headers: http.Header{
+				"Authorization": []string{"InvalidBearer token"},
+			},
+			wantToken: "",
+			wantErr:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotToken, err := auth.GetBearerToken(tt.headers)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetBearerToken() err = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotToken != tt.wantToken {
+				t.Errorf("GetBearerToken() gotToken = %v, want %v", gotToken, tt.wantToken)
+			}
+		})
+	}
+}
+
+func TestMakeRefreshToken(t *testing.T) {
+	tests := []struct {
+		name    string
+		count   int
+		wantLen int
+		unique  bool
+	}{
+		{
+			name:    "single_token_has_expected_shape",
+			count:   1,
+			wantLen: 64,
+		},
+		{
+			name:   "multiple_tokens_are_unique",
+			count:  3,
+			unique: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.count == 0 {
+				tt.count = 1
+			}
+
+			tokens := make([]string, 0, tt.count)
+			for i := 0; i < tt.count; i++ {
+				tokens = append(tokens, auth.MakeRefreshToken())
+			}
+
+			first := tokens[0]
+			if first == "" {
+				t.Fatal("token is empty")
+			}
+			if tt.wantLen > 0 && len(first) != tt.wantLen {
+				t.Fatalf("token length = %d, want %d", len(first), tt.wantLen)
+			}
+			if _, err := hex.DecodeString(first); err != nil {
+				t.Fatalf("token is not valid hex: %v", err)
+			}
+			if tt.unique {
+				seen := make(map[string]struct{}, len(tokens))
+				for _, tok := range tokens {
+					seen[tok] = struct{}{}
+				}
+				if len(seen) != len(tokens) {
+					t.Fatal("tokens should be unique across calls")
+				}
+			}
+		})
+	}
 }
