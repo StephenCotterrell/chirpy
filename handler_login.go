@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/StephenCotterrell/chirpy/internal/auth"
+	"github.com/StephenCotterrell/chirpy/internal/database"
 )
 
 func (cfg *apiConfig) handleUserLogin(w http.ResponseWriter, r *http.Request) {
@@ -53,12 +54,21 @@ func (cfg *apiConfig) handleUserLogin(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't create access JWT", err)
 	}
 
+	refreshToken := auth.MakeRefreshToken()
+	if _, err := cfg.db.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
+		Token:  refreshToken,
+		UserID: user.ID,
+	}); err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't create refresh token", err)
+	}
+
 	respondWithJSON(w, http.StatusOK, response{
 		User: User{
 			ID:        user.ID,
 			CreatedAt: user.CreatedAt,
 			UpdatedAt: user.UpdatedAt,
 		},
-		Token: accessToken,
+		Token:        accessToken,
+		RefreshToken: refreshToken,
 	})
 }
