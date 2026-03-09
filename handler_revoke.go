@@ -10,6 +10,7 @@ func (cfg *apiConfig) handlerRevokeToken(w http.ResponseWriter, r *http.Request)
 	refreshToken, err := auth.GetBearerToken(r.Header)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "failed to parse authorization header", err)
+		return
 	}
 
 	err = cfg.db.RevokeRefreshToken(r.Context(), refreshToken)

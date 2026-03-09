@@ -63,6 +63,7 @@ func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request
 
 	if len(cleanedChirpString) > 140 {
 		respondWithError(w, 400, "chirp is too long", nil)
+		return
 	}
 
 	chirp, err := cfg.db.CreateChirp(r.Context(), database.CreateChirpParams{
@@ -71,6 +72,7 @@ func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request
 	})
 	if err != nil {
 		respondWithError(w, 400, "failed to create chirp", err)
+		return
 	}
 
 	respondWithJSON(w, 201, Chirp{

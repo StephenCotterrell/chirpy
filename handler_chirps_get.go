@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -9,12 +8,12 @@ import (
 
 func (cfg *apiConfig) handlerChirpsRetrieve(w http.ResponseWriter, r *http.Request) {
 	chirpID := r.PathValue("chirpID")
-	log.Printf("%v\n", chirpID)
 
 	if chirpID == "" {
 		dbChirps, err := cfg.db.GetChirps(r.Context())
 		if err != nil {
 			respondWithError(w, http.StatusInternalServerError, "failed to fetch all chirps", err)
+			return
 		}
 
 		chirps := []Chirp{}
@@ -35,11 +34,13 @@ func (cfg *apiConfig) handlerChirpsRetrieve(w http.ResponseWriter, r *http.Reque
 	chirpUUID, err := uuid.Parse(chirpID)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "failed to parse chirp UUID", err)
+		return
 	}
 
 	dbChirp, err := cfg.db.GetChirp(r.Context(), chirpUUID)
 	if err != nil {
 		respondWithError(w, http.StatusNotFound, "no chirp found for chirp id", err)
+		return
 	}
 
 	chirp := Chirp{

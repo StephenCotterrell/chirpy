@@ -52,6 +52,7 @@ func (cfg *apiConfig) handleUserLogin(w http.ResponseWriter, r *http.Request) {
 	)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't create access JWT", err)
+		return
 	}
 
 	refreshToken := auth.MakeRefreshToken()
@@ -60,6 +61,7 @@ func (cfg *apiConfig) handleUserLogin(w http.ResponseWriter, r *http.Request) {
 		UserID: user.ID,
 	}); err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't create refresh token", err)
+		return
 	}
 
 	respondWithJSON(w, http.StatusOK, response{

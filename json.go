@@ -24,7 +24,10 @@ func respondWithError(w http.ResponseWriter, code int, msg string, err error) {
 }
 
 func respondWithJSON(w http.ResponseWriter, code int, payload any) {
-	w.Header().Set("Content-Type", "application/json")
+	if code == http.StatusNoContent {
+		w.WriteHeader(code)
+		return
+	}
 	data, err := json.Marshal(payload)
 	if err != nil {
 		log.Printf("Error marshalling JSON: %s", err)
@@ -32,6 +35,7 @@ func respondWithJSON(w http.ResponseWriter, code int, payload any) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	w.Write(data)
 }

@@ -17,6 +17,7 @@ func (cfg *apiConfig) handlerRefreshToken(w http.ResponseWriter, r *http.Request
 	refreshToken, err := auth.GetBearerToken(r.Header)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "failed to parse authorization header", err)
+		return
 	}
 
 	dbRefreshRecord, err := cfg.db.CheckRefreshToken(r.Context(), refreshToken)

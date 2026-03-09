@@ -42,6 +42,7 @@ func (cfg *apiConfig) handlerUserCreate(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		log.Println()
 		respondWithError(w, http.StatusBadRequest, "could not hash password", err)
+		return
 	}
 
 	user, err := cfg.db.CreateUser(r.Context(), database.CreateUserParams{
