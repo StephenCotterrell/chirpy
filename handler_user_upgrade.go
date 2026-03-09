@@ -2,8 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
+	"github.com/StephenCotterrell/chirpy/internal/auth"
 	"github.com/google/uuid"
 )
 
@@ -16,9 +18,19 @@ func (cfg *apiConfig) handlerUserUpgrade(w http.ResponseWriter, r *http.Request)
 	}
 
 	params := parameters{}
+	authAPIKey, err := auth.GetAPIKey(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "could not parse auth header", err)
+		return
+	}
+
+	if !cfg.validateAPIKey(authAPIKey) {
+		respondWithError(w, http.StatusUnauthorized, "invalid api key", errors.New("invalid api key"))
+		return
+	}
 
 	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&params)
+	err = decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Could not parse parameters", err)
 		return
@@ -35,4 +47,8 @@ func (cfg *apiConfig) handlerUserUpgrade(w http.ResponseWriter, r *http.Request)
 	}
 
 	respondWithJSON(w, http.StatusNoContent, "")
+}
+
+func (cfg *apiConfig) validateAPIKey(apiKey string) bool {
+	return apiKey == cfg.polkaAPIKey
 }
