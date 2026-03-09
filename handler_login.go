@@ -67,6 +67,7 @@ func (cfg *apiConfig) handleUserLogin(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, response{
 		User: User{
 			ID:          user.ID,
+			Email:       user.Email,
 			CreatedAt:   user.CreatedAt,
 			UpdatedAt:   user.UpdatedAt,
 			IsChirpyRed: user.IsChirpyRed,
