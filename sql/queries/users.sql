@@ -12,7 +12,7 @@ VALUES (
 DELETE FROM users;
 
 -- name: GetUser :one
-SELECT id, created_at, updated_at, email, hashed_password FROM users WHERE email = $1;
+SELECT id, created_at, updated_at, email, hashed_password, is_chirpy_red FROM users WHERE email = $1;
 
 -- name: UpdateUser :one
 UPDATE users 
@@ -21,4 +21,6 @@ SET
   hashed_password = $2
 WHERE id = $3 RETURNING *;
 
+-- name: UserUpgradeChirpyRed :exec
+UPDATE users SET is_chirpy_red = true WHERE id = $1;
 
